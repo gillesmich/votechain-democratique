@@ -1,7 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Columns3, Users, Scale, Scroll } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Columns3, Users, Scale, Scroll, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export const AthenianDemocracy = () => {
+  const navigate = useNavigate();
   return (
     <section className="py-16 bg-gradient-to-br from-background via-secondary to-accent/20">
       <div className="container mx-auto px-4">
@@ -95,6 +98,15 @@ export const AthenianDemocracy = () => {
               </p>
             </div>
           </CardContent>
+          <div className="px-6 pb-6">
+            <Button 
+              onClick={() => navigate('/athenian-democracy')}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              Explorer en Détail
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </Card>
       </div>
     </section>

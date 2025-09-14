@@ -3,7 +3,12 @@ import { ArrowDown, Vote, Shield, Users } from "lucide-react";
 
 export const HeroSection = () => {
   const scrollToContent = () => {
-    document.getElementById('democracy-section')?.scrollIntoView({ behavior: 'smooth' });
+    const element = document.getElementById('democracy-section');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.location.href = '/athenian-democracy';
+    }
   };
 
   return (
