@@ -274,9 +274,37 @@ export const FrenchPoliticalTopics = () => {
                       {getTimeAgo(topic.created_at)}
                     </div>
                   </div>
+                  
+                  {/* Mini présentation du sujet */}
+                  <div className="mt-4 p-4 bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/20 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="h-8 w-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Vote className="h-4 w-4 text-primary" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-foreground mb-2">🗳️ Sujet de vote démocratique</h4>
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-3">
+                          Ce sujet d'actualité contient des <strong>données chiffrées vérifiables</strong> et propose un 
+                          <strong> choix démocratique clair</strong>. Votre vote contribue à mesurer l'opinion publique française 
+                          sur cette question importante et sera enregistré de manière sécurisée via la blockchain.
+                        </p>
+                        <div className="flex items-center gap-2 text-xs">
+                          <div className="flex items-center gap-1 bg-green-100 dark:bg-green-900/20 px-2 py-1 rounded">
+                            <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
+                            <span className="text-green-700 dark:text-green-300">Données vérifiées</span>
+                          </div>
+                          <div className="flex items-center gap-1 bg-blue-100 dark:bg-blue-900/20 px-2 py-1 rounded">
+                            <Vote className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                            <span className="text-blue-700 dark:text-blue-300">Choix démocratique</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="mt-4 p-4 bg-background/50 rounded-lg">
                     <div className="mb-4">
-                      <h4 className="font-semibold text-foreground mb-2">Résumé du sujet</h4>
+                      <h4 className="font-semibold text-foreground mb-2">📊 Résumé du sujet avec données chiffrées</h4>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         {topic.description}
                       </p>
