@@ -157,34 +157,118 @@ function parseRSSItems(rssText: string, source: any) {
       // Skip if title is too short or contains unwanted content
       if (title.length > 20 && !title.toLowerCase().includes('podcast') && !title.toLowerCase().includes('direct')) {
         
-        // Categorize based on keywords
-        let category = source.category;
-        const titleLower = title.toLowerCase();
-        
-        if (titleLower.includes('macron') || titleLower.includes('gouvernement') || titleLower.includes('ministre')) {
-          category = 'Politique';
-        } else if (titleLower.includes('économie') || titleLower.includes('emploi') || titleLower.includes('inflation')) {
-          category = 'Économie';
-        } else if (titleLower.includes('école') || titleLower.includes('université') || titleLower.includes('éducation')) {
-          category = 'Éducation';
-        } else if (titleLower.includes('immigration') || titleLower.includes('social') || titleLower.includes('retraite')) {
-          category = 'Société';
-        } else if (titleLower.includes('climat') || titleLower.includes('environnement') || titleLower.includes('nucléaire')) {
-          category = 'Environnement';
-        }
+        // Vérifier si le sujet propose un choix clair
+        if (hasDebatableChoice(title, description)) {
+          
+          // Categorize based on keywords
+          let category = source.category;
+          const titleLower = title.toLowerCase();
+          
+          if (titleLower.includes('macron') || titleLower.includes('gouvernement') || titleLower.includes('ministre')) {
+            category = 'Politique';
+          } else if (titleLower.includes('économie') || titleLower.includes('emploi') || titleLower.includes('inflation')) {
+            category = 'Économie';
+          } else if (titleLower.includes('école') || titleLower.includes('université') || titleLower.includes('éducation')) {
+            category = 'Éducation';
+          } else if (titleLower.includes('immigration') || titleLower.includes('social') || titleLower.includes('retraite')) {
+            category = 'Société';
+          } else if (titleLower.includes('climat') || titleLower.includes('environnement') || titleLower.includes('nucléaire')) {
+            category = 'Environnement';
+          }
 
-        items.push({
-          title: title,
-          description: description || `Article de ${source.name} sur l'actualité politique française.`,
-          source: source.name,
-          category: category,
-          news_url: newsUrl,
-          is_active: true,
-          total_votes: 0
-        });
+          // Reformuler le titre pour être plus clair sur le choix
+          const reformulatedTitle = reformulateAsChoice(title, description);
+
+          items.push({
+            title: reformulatedTitle,
+            description: description || `Article de ${source.name} sur l'actualité politique française.`,
+            source: source.name,
+            category: category,
+            news_url: newsUrl,
+            is_active: true,
+            total_votes: 0
+          });
+        }
       }
     }
   }
   
   return items;
+}
+
+// Fonction pour vérifier si un sujet propose un choix débattable
+function hasDebatableChoice(title: string, description: string): boolean {
+  const text = (title + ' ' + description).toLowerCase();
+  
+  // Mots-clés indiquant une proposition, une réforme, un débat
+  const debatableKeywords = [
+    'réforme', 'proposition', 'projet de loi', 'mesure', 'nouvelle loi',
+    'débat', 'discussion', 'vote', 'adoption', 'rejet',
+    'pour ou contre', 'faut-il', 'doit-on', 'devrait-on',
+    'budget', 'allocation', 'augmentation', 'baisse',
+    'interdiction', 'autorisation', 'légalisation',
+    'création', 'suppression', 'modification',
+    'investissement', 'dépense', 'économie',
+    'nouvelle', 'changement', 'évolution'
+  ];
+  
+  // Mots-clés à exclure (simples informations factuelles)
+  const excludeKeywords = [
+    'accident', 'décès', 'mort', 'arrestation', 'condamnation',
+    'incendie', 'inondation', 'tempête', 'catastrophe',
+    'résultats', 'victoire', 'défaite', 'nomination',
+    'démission', 'interview', 'conférence de presse'
+  ];
+  
+  // Vérifier s'il y a des mots-clés à exclure
+  if (excludeKeywords.some(keyword => text.includes(keyword))) {
+    return false;
+  }
+  
+  // Vérifier s'il y a des mots-clés débattables
+  return debatableKeywords.some(keyword => text.includes(keyword));
+}
+
+// Fonction pour reformuler le titre comme un choix clair
+function reformulateAsChoice(title: string, description: string): string {
+  const titleLower = title.toLowerCase();
+  
+  // Si le titre contient déjà une question ou un choix, le garder
+  if (titleLower.includes('faut-il') || titleLower.includes('doit-on') || titleLower.includes('?')) {
+    return title;
+  }
+  
+  // Reformuler selon le type de sujet
+  if (titleLower.includes('réforme')) {
+    if (titleLower.includes('retraite')) {
+      return title.replace(/réforme (des )?retraites?/i, 'Faut-il réformer le système de retraites ?');
+    }
+    if (titleLower.includes('santé')) {
+      return title.replace(/réforme (de la )?santé/i, 'Faut-il réformer le système de santé ?');
+    }
+    return title + ' : êtes-vous favorable à cette réforme ?';
+  }
+  
+  if (titleLower.includes('budget') || titleLower.includes('dépense') || titleLower.includes('investissement')) {
+    return title + ' : soutenez-vous ces orientations budgétaires ?';
+  }
+  
+  if (titleLower.includes('nouvelle loi') || titleLower.includes('projet de loi')) {
+    return title + ' : êtes-vous favorable à cette proposition ?';
+  }
+  
+  if (titleLower.includes('immigration')) {
+    return title + ' : soutenez-vous ces mesures sur l\'immigration ?';
+  }
+  
+  if (titleLower.includes('nucléaire') || titleLower.includes('énergie')) {
+    return title + ' : quelle politique énergétique privilégier ?';
+  }
+  
+  if (titleLower.includes('éducation') || titleLower.includes('école')) {
+    return title + ' : approuvez-vous ces changements éducatifs ?';
+  }
+  
+  // Cas général : ajouter une question de soutien
+  return title + ' : êtes-vous favorable à cette mesure ?';
 }
