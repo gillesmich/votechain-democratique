@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { Shield, User, Mail, Lock, Smartphone } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
+import { User, Mail, Lock } from "lucide-react";
 
 export const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -16,9 +15,6 @@ export const AuthPage = () => {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
-  const [qrCode, setQrCode] = useState("");
-  const [twoFactorCode, setTwoFactorCode] = useState("");
-  const [showTwoFactor, setShowTwoFactor] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -92,18 +88,7 @@ export const AuthPage = () => {
 
       if (error) throw error;
 
-      // Check if 2FA is enabled for the user
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('two_factor_enabled')
-        .eq('id', (await supabase.auth.getUser()).data.user?.id)
-        .single();
-
-      if (profile?.two_factor_enabled) {
-        setShowTwoFactor(true);
-      } else {
-        navigate("/");
-      }
+      navigate("/");
     } catch (error) {
       toast({
         title: "Erreur de connexion",
@@ -115,99 +100,17 @@ export const AuthPage = () => {
     }
   };
 
-  const setupTwoFactor = async () => {
-    try {
-      const response = await supabase.functions.invoke('setup-2fa');
-      if (response.data?.qrCode) {
-        setQrCode(response.data.qrCode);
-      }
-    } catch (error) {
-      toast({
-        title: "Erreur 2FA",
-        description: "Impossible de configurer l'authentification à deux facteurs",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const verifyTwoFactor = async () => {
-    if (!twoFactorCode) {
-      toast({
-        title: "Erreur",
-        description: "Veuillez entrer le code de vérification",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    try {
-      const response = await supabase.functions.invoke('verify-2fa', {
-        body: { token: twoFactorCode }
-      });
-
-      if (response.data?.verified) {
-        navigate("/");
-      } else {
-        toast({
-          title: "Code invalide",
-          description: "Le code de vérification est incorrect",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      toast({
-        title: "Erreur de vérification",
-        description: "Impossible de vérifier le code",
-        variant: "destructive"
-      });
-    }
-  };
-
-  if (showTwoFactor) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center">
-              <Smartphone className="h-6 w-6 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">Authentification 2FA</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="twoFactorCode">Code de vérification</Label>
-              <Input
-                id="twoFactorCode"
-                type="text"
-                value={twoFactorCode}
-                onChange={(e) => setTwoFactorCode(e.target.value)}
-                placeholder="123456"
-                maxLength={6}
-              />
-            </div>
-            <Button
-              onClick={verifyTwoFactor}
-              disabled={loading}
-              className="w-full"
-            >
-              Vérifier
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center">
-            <Shield className="h-6 w-6 text-primary" />
+            <User className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl">Démocratie Directe</CardTitle>
           <p className="text-muted-foreground">
-            Connexion sécurisée par blockchain
+            Participez aux votes avec vos jetons
           </p>
         </CardHeader>
         <CardContent>
@@ -289,43 +192,18 @@ export const AuthPage = () => {
                   placeholder="••••••••"
                 />
               </div>
-              <Button
-                onClick={handleSignUp}
-                disabled={loading}
-                className="w-full"
-              >
-                <User className="mr-2 h-4 w-4" />
-                S'inscrire
-              </Button>
-            </TabsContent>
-          </Tabs>
-
-          <div className="mt-6 pt-6 border-t">
-            <div className="text-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={setupTwoFactor}
-                className="text-xs"
-              >
-                <Shield className="mr-2 h-3 w-3" />
-                Configurer 2FA
-              </Button>
-            </div>
-            
-            {qrCode && (
-              <div className="mt-4 text-center">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Scannez ce QR code avec votre app d'authentification
-                </p>
-                <div className="flex justify-center">
-                  <QRCodeSVG value={qrCode} size={150} />
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+                <Button
+                  onClick={handleSignUp}
+                  disabled={loading}
+                  className="w-full"
+                >
+                  <User className="mr-2 h-4 w-4" />
+                  S'inscrire
+                </Button>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+    );
 };

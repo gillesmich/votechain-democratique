@@ -12,7 +12,6 @@ interface Profile {
   full_name: string;
   wallet_address: string;
   verification_level: number;
-  two_factor_enabled: boolean;
 }
 
 interface Tokens {
@@ -39,7 +38,7 @@ export const UserProfile = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('username, full_name, wallet_address, verification_level, two_factor_enabled')
+        .select('username, full_name, wallet_address, verification_level')
         .eq('id', user?.id)
         .single();
 
@@ -133,14 +132,7 @@ export const UserProfile = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-between pt-4">
-            <div className="flex items-center gap-2">
-              <Shield className="h-4 w-4" />
-              <span className="text-sm">Authentification 2FA</span>
-              <Badge variant={profile?.two_factor_enabled ? "default" : "secondary"}>
-                {profile?.two_factor_enabled ? "Activée" : "Désactivée"}
-              </Badge>
-            </div>
+          <div className="flex justify-end pt-4">
             <Button onClick={handleSignOut} variant="outline" size="sm">
               <LogOut className="h-4 w-4 mr-2" />
               Déconnexion
