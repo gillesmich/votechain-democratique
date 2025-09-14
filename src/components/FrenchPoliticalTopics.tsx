@@ -305,9 +305,11 @@ export const FrenchPoliticalTopics = () => {
 
                   <div className="mt-4 p-4 bg-background/50 rounded-lg">
                     <div className="mb-4">
-                      <h4 className="font-semibold text-foreground mb-2">📄 Résumé de l'article</h4>
+                      <h4 className="font-semibold text-foreground mb-2">📄 Résumé de l'article complet</h4>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        {topic.description.split('DONNÉES OBJECTIVES:')[0]?.trim() || topic.description}
+                        {topic.description.includes('RÉSUMÉ:') 
+                          ? topic.description.split('RÉSUMÉ:')[1]?.split('DONNÉES OBJECTIVES:')[0]?.trim() 
+                          : topic.description.split('DONNÉES OBJECTIVES:')[0]?.trim() || topic.description}
                       </p>
                     </div>
                     

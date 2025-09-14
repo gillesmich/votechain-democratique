@@ -160,11 +160,15 @@ function parseRSSItems(rssText: string, source: any) {
       // Skip if title is too short or contains unwanted content
       if (title.length > 20 && !title.toLowerCase().includes('podcast') && !title.toLowerCase().includes('direct')) {
         
+        // Récupérer le contenu complet de l'article
+        const fullContent = await fetchArticleContent(newsUrl);
+        const enrichedDescription = fullContent || description;
+        
         // Extraire les données objectives du sujet
-        const objectiveData = extractObjectiveData(title, description);
+        const objectiveData = extractObjectiveData(title, enrichedDescription);
         
         // Vérifier si le sujet propose un choix clair ET contient des données chiffrées objectives
-        if (hasDebatableChoice(title, description) && objectiveData.length > 0) {
+        if (hasDebatableChoice(title, enrichedDescription) && objectiveData.length > 0) {
           
           // Categorize based on keywords
           let category = source.category;
@@ -183,14 +187,14 @@ function parseRSSItems(rssText: string, source: any) {
           }
 
           // Reformuler le titre pour être plus clair sur le choix
-          const reformulatedTitle = reformulateAsChoice(title, description);
+          const reformulatedTitle = reformulateAsChoice(title, enrichedDescription);
 
-          // Ajouter les données objectives à la description
-          const enrichedDescription = `${description || `Article de ${source.name} sur l'actualité politique française.`}\n\nDONNÉES OBJECTIVES: ${objectiveData.join(' • ')}`;
+          // Créer un résumé structuré avec les données objectives
+          const structuredSummary = createStructuredSummary(enrichedDescription, objectiveData);
 
           items.push({
             title: reformulatedTitle,
-            description: enrichedDescription,
+            description: structuredSummary,
             source: source.name,
             category: category,
             news_url: newsUrl,
@@ -205,6 +209,67 @@ function parseRSSItems(rssText: string, source: any) {
   }
   
   return items;
+}
+
+// Fonction pour récupérer le contenu complet d'un article
+async function fetchArticleContent(url: string): Promise<string | null> {
+  if (!url) return null;
+  
+  try {
+    console.log(`Fetching full content from: ${url}`);
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    if (!response.ok) {
+      console.error(`Failed to fetch article content: ${response.status}`);
+      return null;
+    }
+
+    const html = await response.text();
+    
+    // Extraire le contenu principal de l'article (simplified)
+    const contentMatch = html.match(/<article[^>]*>([\s\S]*?)<\/article>/i) ||
+                        html.match(/<div[^>]*class="[^"]*content[^"]*"[^>]*>([\s\S]*?)<\/div>/i) ||
+                        html.match(/<main[^>]*>([\s\S]*?)<\/main>/i);
+    
+    if (contentMatch) {
+      // Nettoyer le HTML et extraire le texte
+      let content = contentMatch[1]
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      
+      // Limiter à 1500 caractères pour éviter des descriptions trop longues
+      return content.substring(0, 1500) + (content.length > 1500 ? '...' : '');
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error fetching article content from ${url}:`, error);
+    return null;
+  }
+}
+
+// Fonction pour créer un résumé structuré
+function createStructuredSummary(content: string, objectiveData: string[]): string {
+  // Extraire les 2-3 premières phrases du contenu
+  const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 20);
+  const summary = sentences.slice(0, 3).join('. ').trim();
+  
+  // Construire le résumé structuré
+  let structuredSummary = `RÉSUMÉ: ${summary}`;
+  
+  if (objectiveData.length > 0) {
+    structuredSummary += `\n\nDONNÉES OBJECTIVES: ${objectiveData.join(' • ')}`;
+  }
+  
+  return structuredSummary;
 }
 
 // Fonction pour vérifier la présence de données chiffrées
