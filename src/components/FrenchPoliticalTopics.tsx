@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Vote, Clock, Newspaper, TrendingUp, CheckCircle, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { RSSManager } from "@/components/RSSManager";
 
 
 interface Topic {
@@ -159,6 +160,10 @@ export const FrenchPoliticalTopics = () => {
             Participez à la démocratie directe en votant sur les sujets d'actualité 
             issus des grands médias français. Votre voix compte dans le débat national.
           </p>
+        </div>
+
+        <div className="max-w-md mx-auto mb-8">
+          <RSSManager />
         </div>
 
         <div className="grid gap-6 max-w-4xl mx-auto">
