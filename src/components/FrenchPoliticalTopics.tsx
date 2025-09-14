@@ -269,24 +269,35 @@ export const FrenchPoliticalTopics = () => {
                     </div>
                   </div>
                   <div className="mt-4 p-4 bg-background/50 rounded-lg">
-                    <p className="text-sm">
-                      <strong>Description :</strong> {topic.description}
-                    </p>
-                    <p className="text-sm mt-2">
-                      <strong>Contexte :</strong> Ce sujet fait partie des débats nationaux actuels. 
-                      Votre participation à ce vote contribue à mesurer l'opinion publique sur cette question.
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-foreground mb-2">Résumé du sujet</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {topic.description}
+                      </p>
+                    </div>
+                    
+                    <div className="mb-4">
+                      <h4 className="font-semibold text-foreground mb-2">Choix proposés</h4>
+                      <div className="grid grid-cols-3 gap-2 text-sm">
+                        <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                          <span className="font-medium text-green-800 dark:text-green-200">Pour</span>
+                          <p className="text-green-600 dark:text-green-400 text-xs mt-1">Soutenir cette proposition</p>
+                        </div>
+                        <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
+                          <span className="font-medium text-red-800 dark:text-red-200">Contre</span>
+                          <p className="text-red-600 dark:text-red-400 text-xs mt-1">S'opposer à cette proposition</p>
+                        </div>
+                        <div className="p-2 bg-gray-50 dark:bg-gray-900/20 rounded border border-gray-200 dark:border-gray-800">
+                          <span className="font-medium text-gray-800 dark:text-gray-200">Abstention</span>
+                          <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Ne pas prendre position</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded">
+                      <strong>Note :</strong> Votre vote contribue à mesurer l'opinion publique sur cette question. 
                       Les résultats sont enregistrés de manière sécurisée via la blockchain.
-                    </p>
-                    {topic.news_url && (
-                      <a 
-                        href={topic.news_url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline text-sm mt-2 inline-block"
-                      >
-                        Lire l'article complet →
-                      </a>
-                    )}
+                    </div>
                   </div>
                 </CardContent>
               )}
