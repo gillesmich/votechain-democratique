@@ -1,10 +1,24 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://jsr.io/@supabase/supabase-js/2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Fonction pour obtenir l'IP du client
+function getClientIP(request: Request): string {
+  const xForwardedFor = request.headers.get('x-forwarded-for');
+  const xRealIP = request.headers.get('x-real-ip');
+  const cfConnectingIP = request.headers.get('cf-connecting-ip');
+  
+  // Prendre la première IP si plusieurs sont présentes
+  if (xForwardedFor) {
+    return xForwardedFor.split(',')[0].trim();
+  }
+  
+  return xRealIP || cfConnectingIP || '127.0.0.1';
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -15,20 +29,16 @@ serve(async (req) => {
   try {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
     const { email, userId } = await req.json();
     
-    // Obtenir l'IP du client
-    const clientIP = req.headers.get('cf-connecting-ip') || 
-                    req.headers.get('x-forwarded-for') || 
-                    req.headers.get('x-real-ip') || 
-                    'unknown';
+    const clientIP = getClientIP(req);
+    
+    console.log(`Enregistrement inscription réussie pour IP: ${clientIP}, Email: ${email}, User ID: ${userId}`);
 
-    console.log('Recording successful registration:', { email, userId, clientIP });
-
-    // Enregistrer la réussite de l'inscription
+    // Appeler la fonction d'enregistrement
     const { error } = await supabase.rpc('record_successful_registration', {
       p_ip_address: clientIP,
       p_email: email,
@@ -36,32 +46,29 @@ serve(async (req) => {
     });
 
     if (error) {
-      console.error('Error recording registration:', error);
+      console.error('Erreur lors de l\'enregistrement:', error);
       return new Response(
-        JSON.stringify({ error: 'Erreur lors de l\'enregistrement' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        JSON.stringify({ success: false, error: error.message }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         }
       );
     }
 
-    console.log('Registration recorded successfully');
+    console.log('Inscription enregistrée avec succès');
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
 
   } catch (error) {
-    console.error('Function error:', error);
+    console.error('Erreur dans record-registration:', error);
     return new Response(
-      JSON.stringify({ error: 'Erreur interne du serveur' }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      JSON.stringify({ success: false, error: error.message }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       }
     );
   }

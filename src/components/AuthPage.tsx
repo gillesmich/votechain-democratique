@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { User, Mail, Lock } from "lucide-react";
-import { generateBrowserFingerprint } from "@/utils/browserFingerprint";
+import { useBrowserFingerprint } from "@/hooks/useBrowserFingerprint";
 
 export const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -18,6 +18,7 @@ export const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const browserFingerprint = useBrowserFingerprint();
 
   useEffect(() => {
     const checkUser = async () => {
@@ -41,11 +42,8 @@ export const AuthPage = () => {
 
     setLoading(true);
     try {
-      // Générer le fingerprint du navigateur
-      const browserFingerprint = generateBrowserFingerprint();
-      
-      // Vérifier d'abord si l'inscription est autorisée
-      const { data: checkResult, error: checkError } = await supabase.functions.invoke('check-registration', {
+      // Vérifier si l'inscription est autorisée
+      const checkResult = await supabase.functions.invoke('check-registration', {
         body: {
           email,
           userAgent: navigator.userAgent,
@@ -53,18 +51,20 @@ export const AuthPage = () => {
         }
       });
 
-      if (checkError) throw new Error('Erreur lors de la vérification');
-      
-      if (!checkResult.allowed) {
+      if (checkResult.error) {
+        throw new Error("Erreur de vérification");
+      }
+
+      if (!checkResult.data.allowed) {
         toast({
-          title: "Inscription bloquée",
-          description: checkResult.reason,
+          title: "Inscription refusée",
+          description: checkResult.data.reason,
           variant: "destructive"
         });
         return;
       }
 
-      // Procéder à l'inscription si autorisée
+      // Procéder à l'inscription
       const { data: authData, error } = await supabase.auth.signUp({
         email,
         password,
