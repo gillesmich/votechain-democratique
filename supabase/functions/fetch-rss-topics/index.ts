@@ -73,18 +73,21 @@ serve(async (req) => {
         const items = parseRSSItems(rssText, source);
         
         // Process first 3 items from each source
+        const filteredItems = [];
         for (const item of items.slice(0, 3)) {
           // Check if topic already exists
           const { data: existing } = await supabaseClient
             .from('voting_topics')
             .select('id')
             .eq('title', item.title)
-            .single();
+            .maybeSingle();
 
           if (!existing) {
-            newTopics.push(item);
+            filteredItems.push(item);
           }
         }
+        
+        newTopics.push(...filteredItems);
 
       } catch (error) {
         console.error(`Error processing ${source.name}:`, error);
@@ -92,7 +95,7 @@ serve(async (req) => {
       }
     }
 
-    console.log(`Processed ${newTopics.length} new topics`);
+    console.log(`Traité ${newTopics.length} nouveaux sujets avec données chiffrées`);
 
     // Insert new topics into database
     if (newTopics.length > 0) {
@@ -112,7 +115,7 @@ serve(async (req) => {
       JSON.stringify({ 
         success: true, 
         processed: newTopics.length,
-        message: `Traité ${newTopics.length} nouveaux sujets d'actualité` 
+        message: `Traité ${newTopics.length} nouveaux sujets avec données chiffrées d'actualité` 
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -157,8 +160,8 @@ function parseRSSItems(rssText: string, source: any) {
       // Skip if title is too short or contains unwanted content
       if (title.length > 20 && !title.toLowerCase().includes('podcast') && !title.toLowerCase().includes('direct')) {
         
-        // Vérifier si le sujet propose un choix clair
-        if (hasDebatableChoice(title, description)) {
+        // Vérifier si le sujet propose un choix clair ET contient des données chiffrées
+        if (hasDebatableChoice(title, description) && hasNumericalData(title, description)) {
           
           // Categorize based on keywords
           let category = source.category;
@@ -194,6 +197,37 @@ function parseRSSItems(rssText: string, source: any) {
   }
   
   return items;
+}
+
+// Fonction pour vérifier la présence de données chiffrées
+function hasNumericalData(title: string, description: string): boolean {
+  const text = (title + ' ' + description).toLowerCase();
+  
+  // Regex pour détecter différents types de données chiffrées
+  const numericalPatterns = [
+    // Pourcentages
+    /\d+[,.]?\d*\s*%/,
+    // Montants en euros
+    /\d+[,.]?\d*\s*(euros?|€|millions?|milliards?)/,
+    // Années et dates
+    /\d{4}|\d{1,2}\/\d{1,2}\/\d{4}/,
+    // Nombres avec unités
+    /\d+[,.]?\d*\s*(millions?|milliards?|milliers?|k€|m€)/,
+    // Nombres suivis d'unités diverses
+    /\d+[,.]?\d*\s*(heures?|jours?|ans?|années?|mois|semaines?)/,
+    // Nombres purs significatifs (plus de 2 chiffres)
+    /\d{3,}/,
+    // Augmentation/baisse avec chiffres
+    /(augmentation|baisse|hausse|diminution|croissance|recul).*?\d+/,
+    // Pourcentages écrits en toutes lettres
+    /(pour cent|pourcent)/,
+    // Budget, coût, prix avec chiffres
+    /(budget|coût|prix|dépense|investissement).*?\d+/,
+    // Dates et périodes
+    /(depuis|d'ici|en|pour)\s*\d{4}/
+  ];
+  
+  return numericalPatterns.some(pattern => pattern.test(text));
 }
 
 // Fonction pour vérifier si un sujet propose un choix débattable

@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Vote, Clock, Newspaper, TrendingUp } from "lucide-react";
+import { Vote, Clock, Newspaper, TrendingUp, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -179,6 +179,12 @@ export const FrenchPoliticalTopics = () => {
                       <Badge className={getCategoryColor(topic.category)}>
                         {topic.category}
                       </Badge>
+                      {userVotes.has(topic.id) && (
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Voté
+                        </Badge>
+                      )}
                       {topic.total_votes > 100 && (
                         <Badge variant="outline" className="border-accent text-accent">
                           <TrendingUp className="h-3 w-3 mr-1" />
