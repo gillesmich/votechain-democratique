@@ -49,6 +49,7 @@ export const FrenchPoliticalTopics = () => {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
+  const [userVoteChoices, setUserVoteChoices] = useState<Map<string, string>>(new Map());
   const [loading, setLoading] = useState(true);
   const [votingLoading, setVotingLoading] = useState<string | null>(null);
   const [showVoteConfirmation, setShowVoteConfirmation] = useState(false);
@@ -86,11 +87,20 @@ export const FrenchPoliticalTopics = () => {
     try {
       const { data, error } = await supabase
         .from('user_votes')
-        .select('topic_id')
+        .select('topic_id, vote_choice')
         .eq('user_id', user.id);
 
       if (error) throw error;
+      
+      // Créer un Set des IDs des sujets votés
       setUserVotes(new Set(data?.map(vote => vote.topic_id) || []));
+      
+      // Créer une Map des choix de vote par sujet
+      const voteChoicesMap = new Map();
+      data?.forEach(vote => {
+        voteChoicesMap.set(vote.topic_id, vote.vote_choice);
+      });
+      setUserVoteChoices(voteChoicesMap);
     } catch (error) {
       console.error('Error fetching user votes:', error);
     }
@@ -124,6 +134,7 @@ export const FrenchPoliticalTopics = () => {
       if (response.error) throw response.error;
 
       setUserVotes(new Set(userVotes.add(topicId)));
+      setUserVoteChoices(new Map(userVoteChoices.set(topicId, voteChoice)));
       await fetchTopics(); // Refresh to get updated vote counts
 
       // Show confirmation popup
@@ -189,7 +200,7 @@ export const FrenchPoliticalTopics = () => {
                       {userVotes.has(topic.id) && (
                         <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                           <CheckCircle className="h-3 w-3 mr-1" />
-                          Voté
+                          Voté: {userVoteChoices.get(topic.id)?.charAt(0).toUpperCase() + userVoteChoices.get(topic.id)?.slice(1)}
                         </Badge>
                       )}
                       {topic.total_votes > 100 && (
@@ -211,7 +222,16 @@ export const FrenchPoliticalTopics = () => {
                     <div className="space-x-2">
                       {user ? (
                         userVotes.has(topic.id) ? (
-                          <Badge variant="default">Voté</Badge>
+                          <div className="flex flex-col gap-2">
+                            <Badge variant="default" className="bg-green-600 text-white">
+                              Votre vote: {userVoteChoices.get(topic.id)?.charAt(0).toUpperCase() + userVoteChoices.get(topic.id)?.slice(1)}
+                            </Badge>
+                            <div className="flex gap-2 opacity-50">
+                              <Button size="sm" variant="outline" disabled className="bg-green-50 border-green-200 text-green-700">Pour</Button>
+                              <Button size="sm" variant="outline" disabled className="bg-red-50 border-red-200 text-red-700">Contre</Button>
+                              <Button size="sm" variant="outline" disabled className="bg-gray-50 border-gray-200 text-gray-700">Abstention</Button>
+                            </div>
+                          </div>
                         ) : (
                           <>
                             <Button
@@ -248,9 +268,9 @@ export const FrenchPoliticalTopics = () => {
                               disabled={votingLoading === topic.id}
                               className="bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                             >
-                              Abstention
-                            </Button>
-                          </>
+                               Abstention
+                             </Button>
+                           </>
                         )
                       ) : (
                         <Button
@@ -309,18 +329,24 @@ export const FrenchPoliticalTopics = () => {
                         )}
                         
                         {/* Lien vers l'article source */}
-                        {topic.news_url && (
-                          <div className="mt-3 pt-3 border-t border-border/50">
-                            <a 
-                              href={topic.news_url} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                              Lire l'article complet sur {topic.source}
-                            </a>
+                         {topic.news_url && (
+                           <div className="mt-3 pt-3 border-t border-border/50">
+                             <a 
+                               href={topic.news_url} 
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium transition-colors group"
+                               onClick={(e) => e.stopPropagation()}
+                               onError={(e) => {
+                                 console.error('Lien article non accessible:', topic.news_url);
+                                 e.currentTarget.classList.add('text-destructive');
+                                 e.currentTarget.innerHTML = '<span class="text-destructive">⚠️ Lien article non disponible</span>';
+                               }}
+                             >
+                               <ExternalLink className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                               Lire l'article complet sur {topic.source}
+                               <span className="text-xs text-muted-foreground ml-1">(source externe)</span>
+                             </a>
                           </div>
                         )}
                       </div>
