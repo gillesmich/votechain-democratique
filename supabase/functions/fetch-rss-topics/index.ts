@@ -75,7 +75,7 @@ serve(async (req) => {
         console.log(`Fetched ${rssText.length} characters from ${source.name}`);
 
         // Parse RSS (simple XML parsing)
-        const items = parseRSSItems(rssText, source);
+        const items = await parseRSSItems(rssText, source);
         
         // Process first 3 items from each source
         const filteredItems = [];
@@ -151,7 +151,7 @@ serve(async (req) => {
   }
 });
 
-function parseRSSItems(rssText: string, source: any) {
+async function parseRSSItems(rssText: string, source: any) {
   const items = [];
   
   // Simple regex-based XML parsing for RSS items
@@ -159,7 +159,6 @@ function parseRSSItems(rssText: string, source: any) {
   const titleRegex = /<title[^>]*><!\[CDATA\[(.*?)\]\]><\/title>|<title[^>]*>(.*?)<\/title>/i;
   const descRegex = /<description[^>]*><!\[CDATA\[(.*?)\]\]><\/description>|<description[^>]*>(.*?)<\/description>/i;
   const linkRegex = /<link[^>]*>(.*?)<\/link>/i;
-  const pubDateRegex = /<pubDate[^>]*>(.*?)<\/pubDate>/i;
 
   let match;
   while ((match = itemRegex.exec(rssText)) !== null && items.length < 5) {
@@ -181,7 +180,12 @@ function parseRSSItems(rssText: string, source: any) {
           !isOutdatedTopic(title, description)) {
         
         // Récupérer le contenu complet de l'article
-        const fullContent = await fetchArticleContent(newsUrl);
+        let fullContent: string | null = null;
+        try {
+          fullContent = await fetchArticleContent(newsUrl);
+        } catch (error) {
+          console.error(`Error fetching article content for ${newsUrl}:`, error);
+        }
         const enrichedDescription = fullContent || description;
         
         // Extraire les données objectives du sujet
@@ -408,6 +412,14 @@ function reformulateAsChoice(title: string, description: string): string {
   
   if (titleLower.includes('nucléaire') || titleLower.includes('énergie')) {
     return title + ' : quelle politique énergétique privilégier ?';
+  }
+  
+  if (titleLower.includes('éducation') || titleLower.includes('école')) {
+    return title + ' : approuvez-vous ces changements éducatifs ?';
+  }
+  
+  // Cas général : ajouter une question de soutien
+  return title + ' : êtes-vous favorable à cette mesure ?';
 }
 
 // Fonction pour extraire les données objectives et chiffrées précises
@@ -477,59 +489,24 @@ function extractObjectiveData(title: string, description: string): string[] {
   
   return cleanedData;
 }
-  
-  if (titleLower.includes('éducation') || titleLower.includes('école')) {
-    return title + ' : approuvez-vous ces changements éducatifs ?';
-  }
-  
-  // Cas général : ajouter une question de soutien
-  return title + ' : êtes-vous favorable à cette mesure ?';
-}
 
-// Fonction pour détecter les sujets périmés
+// Fonction pour vérifier si un sujet est périmé (anciennes réformes, budgets passés)
 function isOutdatedTopic(title: string, description: string): boolean {
   const text = (title + ' ' + description).toLowerCase();
-  const currentYear = new Date().getFullYear(); // 2025
   
-  // Mots-clés et années périmées à éviter
-  const outdatedKeywords = [
-    'budget 2024', 'plf 2024', 'loi de finances 2024',
-    'budget 2023', 'budget 2022', 'budget 2021',
-    'élections 2022', 'présidentielle 2022',
-    'covid-19', 'confinement', 'pass sanitaire',
-    'gilets jaunes', 'retraites 2020'
-  ];
-  
-  // Années explicitement mentionnées qui sont passées
-  const pastYearPatterns = [
-    /202[0-4]/g  // Années 2020-2024
-  ];
-  
-  // Vérifier les mots-clés périmés
-  if (outdatedKeywords.some(keyword => text.includes(keyword))) {
-    console.log(`Sujet périmé détecté (mot-clé): ${title}`);
+  // Détecter les références aux budgets et lois de finances antérieurs à 2025
+  const outdatedBudgetPattern = /(budget|plf|loi de finance)\s*(2020|2021|2022|2023|2024)/i;
+  if (outdatedBudgetPattern.test(text)) {
     return true;
   }
   
-  // Vérifier les années passées dans le contexte de projets/budgets
-  for (const pattern of pastYearPatterns) {
-    const matches = text.match(pattern);
-    if (matches && (text.includes('budget') || text.includes('projet') || text.includes('loi de finances'))) {
-      console.log(`Sujet périmé détecté (année): ${title}`);
-      return true;
-    }
-  }
-  
-  // Exclure les sujets qui ne concernent que le passé récent sans impact actuel
-  const pastOnlyKeywords = [
-    'bilan 2024', 'résultats 2024', 'année écoulée',
-    'premier trimestre', 'deuxième trimestre', 'troisième trimestre'
+  // Détecter les réformes déjà adoptées ou abandonnées
+  const abandonedReforms = [
+    'réforme du code du travail',
+    'loi travail',
+    'réforme sncf',
+    'ordonnances macron'
   ];
   
-  if (pastOnlyKeywords.some(keyword => text.includes(keyword))) {
-    console.log(`Sujet historique détecté: ${title}`);
-    return true;
-  }
-  
-  return false;
+  return abandonedReforms.some(reform => text.includes(reform));
 }
