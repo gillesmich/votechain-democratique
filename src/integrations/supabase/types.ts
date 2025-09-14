@@ -213,7 +213,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      topic_votes_summary: {
+        Row: {
+          topic_id: string | null
+          vote_choice: string | null
+          vote_count: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_votes_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "voting_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       increment_vote_count: {
