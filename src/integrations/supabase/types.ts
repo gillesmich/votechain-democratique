@@ -128,6 +128,48 @@ export type Database = {
         }
         Relationships: []
       }
+      registration_tracking: {
+        Row: {
+          block_reason: string | null
+          blocked: boolean | null
+          browser_fingerprint: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          ip_address: unknown
+          last_attempt_at: string | null
+          registration_attempts: number | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          block_reason?: string | null
+          blocked?: boolean | null
+          browser_fingerprint?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address: unknown
+          last_attempt_at?: string | null
+          registration_attempts?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          block_reason?: string | null
+          blocked?: boolean | null
+          browser_fingerprint?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          ip_address?: unknown
+          last_attempt_at?: string | null
+          registration_attempts?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       user_votes: {
         Row: {
           blockchain_tx_hash: string | null
@@ -231,8 +273,21 @@ export type Database = {
       }
     }
     Functions: {
+      check_registration_attempt: {
+        Args: {
+          p_browser_fingerprint: string
+          p_email: string
+          p_ip_address: unknown
+          p_user_agent: string
+        }
+        Returns: Json
+      }
       increment_vote_count: {
         Args: { topic_id: string }
+        Returns: undefined
+      }
+      record_successful_registration: {
+        Args: { p_email: string; p_ip_address: unknown; p_user_id: string }
         Returns: undefined
       }
     }

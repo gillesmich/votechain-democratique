@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 import { User, Mail, Lock } from "lucide-react";
+import { generateBrowserFingerprint } from "@/utils/browserFingerprint";
 
 export const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -40,7 +41,31 @@ export const AuthPage = () => {
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      // Générer le fingerprint du navigateur
+      const browserFingerprint = generateBrowserFingerprint();
+      
+      // Vérifier d'abord si l'inscription est autorisée
+      const { data: checkResult, error: checkError } = await supabase.functions.invoke('check-registration', {
+        body: {
+          email,
+          userAgent: navigator.userAgent,
+          browserFingerprint
+        }
+      });
+
+      if (checkError) throw new Error('Erreur lors de la vérification');
+      
+      if (!checkResult.allowed) {
+        toast({
+          title: "Inscription bloquée",
+          description: checkResult.reason,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Procéder à l'inscription si autorisée
+      const { data: authData, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -54,11 +79,21 @@ export const AuthPage = () => {
 
       if (error) throw error;
 
+      // Enregistrer l'inscription réussie si un utilisateur a été créé
+      if (authData.user) {
+        await supabase.functions.invoke('record-registration', {
+          body: {
+            email,
+            userId: authData.user.id
+          }
+        });
+      }
+
       toast({
         title: "Inscription réussie",
         description: "Vérifiez votre email pour confirmer votre compte",
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Erreur d'inscription",
         description: error.message,
