@@ -6,32 +6,37 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Sources RSS françaises principales
+// Sources RSS françaises actualisées pour septembre 2025
 const rssSources = [
   {
     name: "Le Monde",
-    url: "https://www.lemonde.fr/rss/une.xml",
-    category: "Général"
+    url: "https://www.lemonde.fr/politique/rss_full.xml",
+    category: "Politique"
   },
   {
     name: "Le Figaro", 
-    url: "https://www.lefigaro.fr/rss/figaro_actualites.xml",
-    category: "Général"
+    url: "https://www.lefigaro.fr/politique/rss",
+    category: "Politique"
   },
   {
     name: "Libération",
-    url: "https://www.liberation.fr/arc/outboundfeeds/rss/",
-    category: "Général"
+    url: "https://www.liberation.fr/politique/rss/",
+    category: "Politique"
   },
   {
     name: "Les Échos",
-    url: "https://www.lesechos.fr/rss/rss_une.xml", 
+    url: "https://www.lesechos.fr/politique-societe/rss", 
     category: "Économie"
   },
   {
     name: "Franceinfo",
-    url: "https://www.francetvinfo.fr/titres.rss",
-    category: "Général"
+    url: "https://www.francetvinfo.fr/politique.rss",
+    category: "Politique"
+  },
+  {
+    name: "Le Parisien",
+    url: "https://www.leparisien.fr/politique/rss.xml",
+    category: "Politique"
   }
 ];
 
@@ -157,8 +162,11 @@ function parseRSSItems(rssText: string, source: any) {
       const description = (descMatch?.[1] || descMatch?.[2] || '').trim().substring(0, 500);
       const newsUrl = (linkMatch?.[1] || '').trim();
       
-      // Skip if title is too short or contains unwanted content
-      if (title.length > 20 && !title.toLowerCase().includes('podcast') && !title.toLowerCase().includes('direct')) {
+      // Skip if title is too short or contains unwanted content or outdated topics
+      if (title.length > 20 && 
+          !title.toLowerCase().includes('podcast') && 
+          !title.toLowerCase().includes('direct') &&
+          !isOutdatedTopic(title, description)) {
         
         // Récupérer le contenu complet de l'article
         const fullContent = await fetchArticleContent(newsUrl);
@@ -464,4 +472,52 @@ function extractObjectiveData(title: string, description: string): string[] {
   
   // Cas général : ajouter une question de soutien
   return title + ' : êtes-vous favorable à cette mesure ?';
+}
+
+// Fonction pour détecter les sujets périmés
+function isOutdatedTopic(title: string, description: string): boolean {
+  const text = (title + ' ' + description).toLowerCase();
+  const currentYear = new Date().getFullYear(); // 2025
+  
+  // Mots-clés et années périmées à éviter
+  const outdatedKeywords = [
+    'budget 2024', 'plf 2024', 'loi de finances 2024',
+    'budget 2023', 'budget 2022', 'budget 2021',
+    'élections 2022', 'présidentielle 2022',
+    'covid-19', 'confinement', 'pass sanitaire',
+    'gilets jaunes', 'retraites 2020'
+  ];
+  
+  // Années explicitement mentionnées qui sont passées
+  const pastYearPatterns = [
+    /202[0-4]/g  // Années 2020-2024
+  ];
+  
+  // Vérifier les mots-clés périmés
+  if (outdatedKeywords.some(keyword => text.includes(keyword))) {
+    console.log(`Sujet périmé détecté (mot-clé): ${title}`);
+    return true;
+  }
+  
+  // Vérifier les années passées dans le contexte de projets/budgets
+  for (const pattern of pastYearPatterns) {
+    const matches = text.match(pattern);
+    if (matches && (text.includes('budget') || text.includes('projet') || text.includes('loi de finances'))) {
+      console.log(`Sujet périmé détecté (année): ${title}`);
+      return true;
+    }
+  }
+  
+  // Exclure les sujets qui ne concernent que le passé récent sans impact actuel
+  const pastOnlyKeywords = [
+    'bilan 2024', 'résultats 2024', 'année écoulée',
+    'premier trimestre', 'deuxième trimestre', 'troisième trimestre'
+  ];
+  
+  if (pastOnlyKeywords.some(keyword => text.includes(keyword))) {
+    console.log(`Sujet historique détecté: ${title}`);
+    return true;
+  }
+  
+  return false;
 }
