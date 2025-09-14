@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Vote, Clock, Newspaper, TrendingUp, CheckCircle, ExternalLink } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Vote, Clock, Newspaper, TrendingUp, CheckCircle, ExternalLink, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { RSSManager } from "@/components/RSSManager";
 
@@ -50,6 +51,8 @@ export const FrenchPoliticalTopics = () => {
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [votingLoading, setVotingLoading] = useState<string | null>(null);
+  const [showVoteConfirmation, setShowVoteConfirmation] = useState(false);
+  const [lastVoteChoice, setLastVoteChoice] = useState<string>("");
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -123,10 +126,9 @@ export const FrenchPoliticalTopics = () => {
       setUserVotes(new Set(userVotes.add(topicId)));
       await fetchTopics(); // Refresh to get updated vote counts
 
-      toast({
-        title: "Vote enregistré",
-        description: `Votre vote "${voteChoice}" a été enregistré sur la blockchain`,
-      });
+      // Show confirmation popup
+      setLastVoteChoice(voteChoice);
+      setShowVoteConfirmation(true);
     } catch (error) {
       toast({
         title: "Erreur de vote",
@@ -381,6 +383,46 @@ export const FrenchPoliticalTopics = () => {
             </div>
           </Card>
         </div>
+
+        {/* Vote Confirmation Dialog */}
+        <Dialog open={showVoteConfirmation} onOpenChange={setShowVoteConfirmation}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-600" />
+                Vote confirmé
+              </DialogTitle>
+              <DialogDescription asChild>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="h-10 w-10 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
+                      <User className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-green-900 dark:text-green-100">
+                        Le citoyen <span className="font-bold">{user?.email || "Utilisateur"}</span> a voté
+                      </p>
+                      <p className="text-xs text-green-700 dark:text-green-300">
+                        Vote: <span className="font-semibold capitalize">{lastVoteChoice}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Votre vote a été enregistré de manière sécurisée sur la blockchain et contribue au débat démocratique.
+                  </div>
+                </div>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-center pt-4">
+              <Button 
+                onClick={() => setShowVoteConfirmation(false)}
+                className="w-full"
+              >
+                Continuer
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </section>
   );
