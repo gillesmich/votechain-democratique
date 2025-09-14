@@ -167,8 +167,8 @@ function parseRSSItems(rssText: string, source: any) {
         // Extraire les données objectives du sujet
         const objectiveData = extractObjectiveData(title, enrichedDescription);
         
-        // Vérifier si le sujet propose un choix clair ET contient des données chiffrées objectives
-        if (hasDebatableChoice(title, enrichedDescription) && objectiveData.length > 0) {
+        // Vérifier si le sujet propose un choix clair ET contient des données chiffrées STRICTES
+        if (hasDebatableChoice(title, enrichedDescription) && hasStrictNumericalData(title, enrichedDescription) && objectiveData.length >= 2) {
           
           // Categorize based on keywords
           let category = source.category;
@@ -202,7 +202,7 @@ function parseRSSItems(rssText: string, source: any) {
             total_votes: 0
           });
         } else {
-          console.log(`Sujet rejeté (manque de données objectives): ${title}`);
+          console.log(`Sujet rejeté - Titre: ${title} - Données trouvées: ${objectiveData.length} - Données strictes: ${hasStrictNumericalData(title, enrichedDescription)}`);
         }
       }
     }
@@ -256,51 +256,69 @@ async function fetchArticleContent(url: string): Promise<string | null> {
   }
 }
 
-// Fonction pour créer un résumé structuré
+// Fonction pour créer un résumé structuré avec focus sur les données
 function createStructuredSummary(content: string, objectiveData: string[]): string {
-  // Extraire les 2-3 premières phrases du contenu
+  // Extraire uniquement les phrases contenant des données chiffrées
   const sentences = content.split(/[.!?]+/).filter(s => s.trim().length > 20);
-  const summary = sentences.slice(0, 3).join('. ').trim();
+  const dataSentences = sentences.filter(sentence => {
+    const lowerSentence = sentence.toLowerCase();
+    return /\d+[,.]?\d*\s*(%|euros?|€|millions?|milliards?|emplois?|ans?)/.test(lowerSentence) ||
+           /(budget|coût|prix|dépense|investissement|augmentation|baisse|hausse|diminution).*?\d+/.test(lowerSentence);
+  });
   
-  // Construire le résumé structuré
-  let structuredSummary = `RÉSUMÉ: ${summary}`;
+  // Prendre les 2 meilleures phrases avec données + première phrase générale
+  const factualSummary = dataSentences.slice(0, 2).join('. ').trim();
+  const generalContext = sentences[0] || '';
+  
+  // Construire le résumé factuel
+  let structuredSummary = `CONTEXTE: ${generalContext}`;
+  
+  if (factualSummary) {
+    structuredSummary += `\n\nFAITS CHIFFRÉS: ${factualSummary}`;
+  }
   
   if (objectiveData.length > 0) {
-    structuredSummary += `\n\nDONNÉES OBJECTIVES: ${objectiveData.join(' • ')}`;
+    structuredSummary += `\n\nDONNÉES PRÉCISES: ${objectiveData.slice(0, 3).join(' • ')}`;
   }
   
   return structuredSummary;
 }
 
-// Fonction pour vérifier la présence de données chiffrées
-function hasNumericalData(title: string, description: string): boolean {
+// Fonction pour vérifier la présence de données chiffrées STRICTES
+function hasStrictNumericalData(title: string, description: string): boolean {
   const text = (title + ' ' + description).toLowerCase();
   
-  // Regex pour détecter différents types de données chiffrées
-  const numericalPatterns = [
-    // Pourcentages
-    /\d+[,.]?\d*\s*%/,
-    // Montants en euros
-    /\d+[,.]?\d*\s*(euros?|€|millions?|milliards?)/,
-    // Années et dates
-    /\d{4}|\d{1,2}\/\d{1,2}\/\d{4}/,
-    // Nombres avec unités
-    /\d+[,.]?\d*\s*(millions?|milliards?|milliers?|k€|m€)/,
-    // Nombres suivis d'unités diverses
-    /\d+[,.]?\d*\s*(heures?|jours?|ans?|années?|mois|semaines?)/,
-    // Nombres purs significatifs (plus de 2 chiffres)
-    /\d{3,}/,
-    // Augmentation/baisse avec chiffres
-    /(augmentation|baisse|hausse|diminution|croissance|recul).*?\d+/,
-    // Pourcentages écrits en toutes lettres
-    /(pour cent|pourcent)/,
-    // Budget, coût, prix avec chiffres
-    /(budget|coût|prix|dépense|investissement).*?\d+/,
-    // Dates et périodes
-    /(depuis|d'ici|en|pour)\s*\d{4}/
+  // Compteur de données chiffrées trouvées
+  let dataCount = 0;
+  
+  // Regex pour détecter différents types de données chiffrées PRÉCISES
+  const strictPatterns = [
+    // Pourcentages précis
+    /\d+[,.]?\d*\s*%/g,
+    // Montants en euros précis
+    /\d+[,.]?\d*\s*(millions?|milliards?)\s*(d'euros?|€|euros?)/gi,
+    // Nombres avec unités économiques
+    /\d+[,.]?\d*\s*(k€|m€|milliards?|millions?)\s*(d'euros?|€)?/gi,
+    // Augmentation/baisse avec pourcentages
+    /(augmentation|baisse|hausse|diminution|croissance|recul)\s*(de\s*)?\d+[,.]?\d*\s*%/gi,
+    // Budget, coût, prix avec montants précis
+    /(budget|coût|prix|dépense|investissement|aide)\s*(de\s*)?\d+[,.]?\d*\s*(millions?|milliards?|€|euros?)/gi,
+    // Emplois, postes avec nombres
+    /\d+[,.]?\d*\s*(emplois?|postes?|suppressions?|créations?)/gi,
+    // Durées précises (âge, années de service)
+    /\d+\s*ans?\s*(de\s*)?(cotisation|retraite|service|travail)/gi
   ];
   
-  return numericalPatterns.some(pattern => pattern.test(text));
+  // Compter le nombre de données objectives trouvées
+  strictPatterns.forEach(pattern => {
+    const matches = text.match(pattern);
+    if (matches) {
+      dataCount += matches.length;
+    }
+  });
+  
+  // Exiger au moins 2 données chiffrées différentes pour être considéré comme valide
+  return dataCount >= 2;
 }
 
 // Fonction pour vérifier si un sujet propose un choix débattable
