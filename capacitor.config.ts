@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.0353b76a691847229780c2858f640412',
+  appId: 'com.lovable.votechain.democratique',
   appName: 'votechain-democratique',
   webDir: 'dist',
   server: {
