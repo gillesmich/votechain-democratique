@@ -21,6 +21,11 @@ interface Topic {
   created_at: string;
 }
 
+interface VoteResult {
+  vote_choice: string;
+  vote_count: number;
+}
+
 // Helper function for category colors
 const getCategoryColor = (category: string) => {
   const colors: { [key: string]: string } = {
@@ -50,6 +55,7 @@ export const FrenchPoliticalTopics = () => {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
   const [userVoteChoices, setUserVoteChoices] = useState<Map<string, string>>(new Map());
+  const [voteResults, setVoteResults] = useState<Map<string, VoteResult[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [votingLoading, setVotingLoading] = useState<string | null>(null);
   const [showVoteConfirmation, setShowVoteConfirmation] = useState(false);
@@ -62,6 +68,7 @@ export const FrenchPoliticalTopics = () => {
     if (user) {
       fetchUserVotes();
     }
+    fetchVoteResults();
   }, [user]);
 
   const fetchTopics = async () => {
@@ -106,6 +113,33 @@ export const FrenchPoliticalTopics = () => {
     }
   };
 
+  const fetchVoteResults = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('topic_votes_summary')
+        .select('topic_id, vote_choice, vote_count');
+
+      if (error) throw error;
+      
+      // Organiser les résultats par topic_id
+      const resultsMap = new Map<string, VoteResult[]>();
+      data?.forEach(result => {
+        const topicId = result.topic_id;
+        if (!resultsMap.has(topicId)) {
+          resultsMap.set(topicId, []);
+        }
+        resultsMap.get(topicId)?.push({
+          vote_choice: result.vote_choice,
+          vote_count: result.vote_count
+        });
+      });
+      
+      setVoteResults(resultsMap);
+    } catch (error) {
+      console.error('Error fetching vote results:', error);
+    }
+  };
+
   const handleVote = async (topicId: string, voteChoice: 'pour' | 'contre' | 'abstention') => {
     if (!user) {
       toast({
@@ -136,6 +170,7 @@ export const FrenchPoliticalTopics = () => {
       setUserVotes(new Set(userVotes.add(topicId)));
       setUserVoteChoices(new Map(userVoteChoices.set(topicId, voteChoice)));
       await fetchTopics(); // Refresh to get updated vote counts
+      await fetchVoteResults(); // Refresh vote results
 
       // Show confirmation popup
       setLastVoteChoice(voteChoice);
@@ -205,7 +240,7 @@ export const FrenchPoliticalTopics = () => {
                               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
                               : userVoteChoices.get(topic.id) === 'contre'
                               ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
                           }`}
                         >
                           <CheckCircle className="h-3 w-3 mr-1" />
@@ -239,7 +274,7 @@ export const FrenchPoliticalTopics = () => {
                                   ? 'bg-green-600 text-white border-green-600' 
                                   : userVoteChoices.get(topic.id) === 'contre'
                                   ? 'bg-red-600 text-white border-red-600'
-                                  : 'bg-gray-600 text-white border-gray-600'
+                                  : 'bg-blue-600 text-white border-blue-600'
                               }`}
                             >
                               Votre vote: {userVoteChoices.get(topic.id)?.charAt(0).toUpperCase() + userVoteChoices.get(topic.id)?.slice(1)}
@@ -247,7 +282,7 @@ export const FrenchPoliticalTopics = () => {
                             <div className="flex gap-2 opacity-50">
                               <Button size="sm" variant="outline" disabled className="bg-green-50 border-green-200 text-green-700">Pour</Button>
                               <Button size="sm" variant="outline" disabled className="bg-red-50 border-red-200 text-red-700">Contre</Button>
-                              <Button size="sm" variant="outline" disabled className="bg-gray-50 border-gray-200 text-gray-700">Abstention</Button>
+                              <Button size="sm" variant="outline" disabled className="bg-blue-50 border-blue-200 text-blue-700">Abstention</Button>
                             </div>
                           </div>
                         ) : (
@@ -283,9 +318,9 @@ export const FrenchPoliticalTopics = () => {
                                 e.stopPropagation();
                                 handleVote(topic.id, 'abstention');
                               }}
-                              disabled={votingLoading === topic.id}
-                              className="bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
-                            >
+                               disabled={votingLoading === topic.id}
+                               className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+                             >
                                Abstention
                              </Button>
                            </>
@@ -394,12 +429,64 @@ export const FrenchPoliticalTopics = () => {
                           <span className="font-medium text-red-800 dark:text-red-200">✗ Contre</span>
                           <p className="text-red-600 dark:text-red-400 text-xs mt-1">S'opposer à cette proposition</p>
                         </div>
-                        <div className="p-2 bg-gray-50 dark:bg-gray-900/20 rounded border border-gray-200 dark:border-gray-800">
-                          <span className="font-medium text-gray-800 dark:text-gray-200">○ Abstention</span>
-                          <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Ne pas prendre position</p>
+                        <div className="p-2 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+                          <span className="font-medium text-blue-800 dark:text-blue-200">○ Abstention</span>
+                          <p className="text-blue-600 dark:text-blue-400 text-xs mt-1">Ne pas prendre position</p>
                         </div>
                       </div>
                     </div>
+                    
+                    {/* Résultats des votes */}
+                    {voteResults.has(topic.id) && voteResults.get(topic.id)!.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="font-semibold text-foreground mb-3">📊 Résultats actuels</h4>
+                        <div className="space-y-2">
+                          {voteResults.get(topic.id)?.map((result) => {
+                            const total = voteResults.get(topic.id)?.reduce((sum, r) => sum + r.vote_count, 0) || 1;
+                            const percentage = Math.round((result.vote_count / total) * 100);
+                            
+                            const colorClasses = result.vote_choice === 'pour' 
+                              ? 'bg-green-500 text-green-50'
+                              : result.vote_choice === 'contre'
+                              ? 'bg-red-500 text-red-50'
+                              : 'bg-blue-500 text-blue-50';
+                              
+                            const bgColorClasses = result.vote_choice === 'pour' 
+                              ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800'
+                              : result.vote_choice === 'contre'
+                              ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800'
+                              : 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800';
+
+                            return (
+                              <div key={result.vote_choice} className={`p-3 rounded-lg border ${bgColorClasses}`}>
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium capitalize">
+                                    {result.vote_choice === 'pour' ? '✓ Pour' : 
+                                     result.vote_choice === 'contre' ? '✗ Contre' : 
+                                     '○ Abstention'}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm font-semibold">{result.vote_count} votes</span>
+                                    <Badge className={`${colorClasses} border-0`}>
+                                      {percentage}%
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div className="w-full bg-white/60 rounded-full h-2 dark:bg-black/20">
+                                  <div 
+                                    className={`h-2 rounded-full transition-all duration-500 ${colorClasses.split(' ')[0]}`}
+                                    style={{ width: `${percentage}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-2 text-xs text-muted-foreground text-center">
+                          Total des votes: {voteResults.get(topic.id)?.reduce((sum, r) => sum + r.vote_count, 0)}
+                        </div>
+                      </div>
+                    )}
                     
                     <div className="text-xs text-muted-foreground bg-muted/50 p-3 rounded">
                       <strong>Note :</strong> Votre vote contribue à mesurer l'opinion publique sur cette question. 
