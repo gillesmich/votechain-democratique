@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Vote, Clock, Newspaper, TrendingUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { RSSManager } from "@/components/RSSManager";
 
 interface Topic {
   id: string;
@@ -150,7 +151,7 @@ export const FrenchPoliticalTopics = () => {
   return (
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h2 className="text-4xl font-bold mb-4 text-foreground">
             Sujets Politiques Français
           </h2>
@@ -164,6 +165,11 @@ export const FrenchPoliticalTopics = () => {
               Flux automatique depuis les principales sources d'information
             </span>
           </div>
+        </div>
+
+        {/* RSS Manager Component */}
+        <div className="max-w-md mx-auto mb-8">
+          <RSSManager />
         </div>
 
         <div className="grid gap-6 max-w-4xl mx-auto">
