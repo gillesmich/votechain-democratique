@@ -198,7 +198,16 @@ export const FrenchPoliticalTopics = () => {
                         {topic.category}
                       </Badge>
                       {userVotes.has(topic.id) && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                        <Badge 
+                          variant="secondary" 
+                          className={`${
+                            userVoteChoices.get(topic.id) === 'pour' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' 
+                              : userVoteChoices.get(topic.id) === 'contre'
+                              ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                              : 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+                          }`}
+                        >
                           <CheckCircle className="h-3 w-3 mr-1" />
                           Voté: {userVoteChoices.get(topic.id)?.charAt(0).toUpperCase() + userVoteChoices.get(topic.id)?.slice(1)}
                         </Badge>
@@ -223,7 +232,16 @@ export const FrenchPoliticalTopics = () => {
                       {user ? (
                         userVotes.has(topic.id) ? (
                           <div className="flex flex-col gap-2">
-                            <Badge variant="default" className="bg-green-600 text-white">
+                            <Badge 
+                              variant="default" 
+                              className={`${
+                                userVoteChoices.get(topic.id) === 'pour' 
+                                  ? 'bg-green-600 text-white border-green-600' 
+                                  : userVoteChoices.get(topic.id) === 'contre'
+                                  ? 'bg-red-600 text-white border-red-600'
+                                  : 'bg-gray-600 text-white border-gray-600'
+                              }`}
+                            >
                               Votre vote: {userVoteChoices.get(topic.id)?.charAt(0).toUpperCase() + userVoteChoices.get(topic.id)?.slice(1)}
                             </Badge>
                             <div className="flex gap-2 opacity-50">
@@ -369,15 +387,15 @@ export const FrenchPoliticalTopics = () => {
                       <h4 className="font-semibold text-foreground mb-2">Choix proposés</h4>
                       <div className="grid grid-cols-3 gap-2 text-sm">
                         <div className="p-2 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
-                          <span className="font-medium text-green-800 dark:text-green-200">Pour</span>
+                          <span className="font-medium text-green-800 dark:text-green-200">✓ Pour</span>
                           <p className="text-green-600 dark:text-green-400 text-xs mt-1">Soutenir cette proposition</p>
                         </div>
                         <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded border border-red-200 dark:border-red-800">
-                          <span className="font-medium text-red-800 dark:text-red-200">Contre</span>
+                          <span className="font-medium text-red-800 dark:text-red-200">✗ Contre</span>
                           <p className="text-red-600 dark:text-red-400 text-xs mt-1">S'opposer à cette proposition</p>
                         </div>
                         <div className="p-2 bg-gray-50 dark:bg-gray-900/20 rounded border border-gray-200 dark:border-gray-800">
-                          <span className="font-medium text-gray-800 dark:text-gray-200">Abstention</span>
+                          <span className="font-medium text-gray-800 dark:text-gray-200">○ Abstention</span>
                           <p className="text-gray-600 dark:text-gray-400 text-xs mt-1">Ne pas prendre position</p>
                         </div>
                       </div>
