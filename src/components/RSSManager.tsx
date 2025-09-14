@@ -12,21 +12,30 @@ export const RSSManager = () => {
   const fetchRSSTopics = async () => {
     setLoading(true);
     try {
+      console.log('Déclenching RSS fetch for September 2025...');
       const response = await supabase.functions.invoke('fetch-rss-topics');
       
-      if (response.error) throw response.error;
+      if (response.error) {
+        console.error('RSS function error:', response.error);
+        throw response.error;
+      }
+
+      console.log('RSS response:', response.data);
 
       toast({
         title: "Actualisation réussie",
-        description: response.data?.message || "Les sujets d'actualité ont été mis à jour",
+        description: response.data?.message || "Nouveaux sujets d'actualité récupérés pour septembre 2025",
       });
 
-      // Refresh the page to show new topics
-      window.location.reload();
+      // Wait a bit before refreshing to ensure data is processed
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
     } catch (error) {
+      console.error('RSS fetch error:', error);
       toast({
         title: "Erreur d'actualisation",
-        description: "Impossible de récupérer les derniers sujets d'actualité",
+        description: error.message || "Impossible de récupérer les derniers sujets d'actualité",
         variant: "destructive"
       });
     } finally {
