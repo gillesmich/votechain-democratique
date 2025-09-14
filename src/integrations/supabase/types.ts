@@ -14,7 +14,203 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      blockchain_transactions: {
+        Row: {
+          block_number: number | null
+          created_at: string
+          gas_price: number | null
+          gas_used: number | null
+          id: string
+          metadata: Json | null
+          status: string
+          transaction_hash: string
+          transaction_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          block_number?: number | null
+          created_at?: string
+          gas_price?: number | null
+          gas_used?: number | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          transaction_hash: string
+          transaction_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          block_number?: number | null
+          created_at?: string
+          gas_price?: number | null
+          gas_used?: number | null
+          id?: string
+          metadata?: Json | null
+          status?: string
+          transaction_hash?: string
+          transaction_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      democracy_tokens: {
+        Row: {
+          created_at: string
+          earned_tokens: number
+          id: string
+          last_reward_date: string | null
+          spent_tokens: number
+          token_balance: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          earned_tokens?: number
+          id?: string
+          last_reward_date?: string | null
+          spent_tokens?: number
+          token_balance?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          earned_tokens?: number
+          id?: string
+          last_reward_date?: string | null
+          spent_tokens?: number
+          token_balance?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          two_factor_enabled: boolean | null
+          two_factor_secret: string | null
+          updated_at: string
+          username: string | null
+          verification_level: number | null
+          wallet_address: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          two_factor_enabled?: boolean | null
+          two_factor_secret?: string | null
+          updated_at?: string
+          username?: string | null
+          verification_level?: number | null
+          wallet_address?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          two_factor_enabled?: boolean | null
+          two_factor_secret?: string | null
+          updated_at?: string
+          username?: string | null
+          verification_level?: number | null
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      user_votes: {
+        Row: {
+          blockchain_tx_hash: string | null
+          id: string
+          topic_id: string
+          user_id: string
+          vote_choice: string
+          vote_weight: number | null
+          voted_at: string
+        }
+        Insert: {
+          blockchain_tx_hash?: string | null
+          id?: string
+          topic_id: string
+          user_id: string
+          vote_choice: string
+          vote_weight?: number | null
+          voted_at?: string
+        }
+        Update: {
+          blockchain_tx_hash?: string | null
+          id?: string
+          topic_id?: string
+          user_id?: string
+          vote_choice?: string
+          vote_weight?: number | null
+          voted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_votes_topic_id_fkey"
+            columns: ["topic_id"]
+            isOneToOne: false
+            referencedRelation: "voting_topics"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voting_topics: {
+        Row: {
+          blockchain_hash: string | null
+          category: string
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          news_url: string | null
+          source: string | null
+          title: string
+          total_votes: number | null
+          updated_at: string
+        }
+        Insert: {
+          blockchain_hash?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          news_url?: string | null
+          source?: string | null
+          title: string
+          total_votes?: number | null
+          updated_at?: string
+        }
+        Update: {
+          blockchain_hash?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          news_url?: string | null
+          source?: string | null
+          title?: string
+          total_votes?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
