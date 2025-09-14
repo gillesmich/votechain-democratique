@@ -19,55 +19,111 @@ export const AthenianDemocracy = () => {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
+          <Card 
+            className="border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            onClick={() => navigate('/athenian-democracy/ecclesia')}
+          >
             <CardHeader className="text-center">
-              <Users className="h-12 w-12 text-primary mx-auto mb-2" />
-              <CardTitle className="text-lg">L'Ecclésia</CardTitle>
+              <Users className="h-12 w-12 text-primary mx-auto mb-2 group-hover:scale-110 transition-transform" />
+              <CardTitle className="text-lg group-hover:text-primary transition-colors">L'Ecclésia</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground text-center">
                 L'assemblée populaire où tous les citoyens athéniens pouvaient participer 
                 aux débats et voter sur les lois.
               </p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full mt-3 group-hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/athenian-democracy/ecclesia');
+                }}
+              >
+                En savoir plus <ArrowRight className="ml-2 h-3 w-3" />
+              </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
+          <Card 
+            className="border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            onClick={() => navigate('/athenian-democracy/ostracism')}
+          >
             <CardHeader className="text-center">
-              <Scroll className="h-12 w-12 text-accent mx-auto mb-2" />
-              <CardTitle className="text-lg">L'Ostracisme</CardTitle>
+              <Scroll className="h-12 w-12 text-accent mx-auto mb-2 group-hover:scale-110 transition-transform" />
+              <CardTitle className="text-lg group-hover:text-primary transition-colors">L'Ostracisme</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground text-center">
                 Procédure permettant d'exiler temporairement un citoyen jugé 
                 dangereux pour la démocratie.
               </p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full mt-3 group-hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/athenian-democracy/ostracism');
+                }}
+              >
+                En savoir plus <ArrowRight className="ml-2 h-3 w-3" />
+              </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
+          <Card 
+            className="border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            onClick={() => navigate('/athenian-democracy/heliaia')}
+          >
             <CardHeader className="text-center">
-              <Scale className="h-12 w-12 text-primary mx-auto mb-2" />
-              <CardTitle className="text-lg">L'Héliée</CardTitle>
+              <Scale className="h-12 w-12 text-primary mx-auto mb-2 group-hover:scale-110 transition-transform" />
+              <CardTitle className="text-lg group-hover:text-primary transition-colors">L'Héliée</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground text-center">
                 Tribunal populaire composé de 6000 citoyens tirés au sort 
                 pour rendre la justice.
               </p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full mt-3 group-hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/athenian-democracy/heliaia');
+                }}
+              >
+                En savoir plus <ArrowRight className="ml-2 h-3 w-3" />
+              </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300">
+          <Card 
+            className="border-border/50 bg-card/80 backdrop-blur-sm hover:shadow-lg transition-all duration-300 cursor-pointer group"
+            onClick={() => navigate('/athenian-democracy/boule')}
+          >
             <CardHeader className="text-center">
-              <Columns3 className="h-12 w-12 text-accent mx-auto mb-2" />
-              <CardTitle className="text-lg">La Boulè</CardTitle>
+              <Columns3 className="h-12 w-12 text-accent mx-auto mb-2 group-hover:scale-110 transition-transform" />
+              <CardTitle className="text-lg group-hover:text-primary transition-colors">La Boulè</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground text-center">
                 Conseil de 500 membres tiré au sort, préparant les décisions 
                 de l'assemblée populaire.
               </p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="w-full mt-3 group-hover:bg-primary/10"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/athenian-democracy/boule');
+                }}
+              >
+                En savoir plus <ArrowRight className="ml-2 h-3 w-3" />
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -98,12 +154,20 @@ export const AthenianDemocracy = () => {
               </p>
             </div>
           </CardContent>
-          <div className="px-6 pb-6">
+          <div className="flex gap-4">
             <Button 
               onClick={() => navigate('/athenian-democracy')}
-              className="w-full bg-primary hover:bg-primary/90"
+              className="flex-1 bg-primary hover:bg-primary/90"
             >
               Explorer en Détail
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={() => navigate('/athenian-democracy/principles')}
+              variant="outline"
+              className="flex-1"
+            >
+              Voir les Principes
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>

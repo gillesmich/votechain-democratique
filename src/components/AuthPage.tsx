@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
-import { User, Mail, Lock } from "lucide-react";
+import { User, Mail, Lock, ArrowLeft } from "lucide-react";
 import { useBrowserFingerprint } from "@/hooks/useBrowserFingerprint";
 
 export const AuthPage = () => {
@@ -138,16 +138,26 @@ export const AuthPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center">
-            <User className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Démocratie Directe</CardTitle>
-          <p className="text-muted-foreground">
-            Participez aux votes avec vos jetons
-          </p>
-        </CardHeader>
+      <div className="w-full max-w-md">
+        <Button 
+          variant="ghost" 
+          onClick={() => navigate("/")}
+          className="mb-4 flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Retour à l'accueil
+        </Button>
+        
+        <Card className="w-full">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 h-12 w-12 bg-primary/20 rounded-full flex items-center justify-center">
+              <User className="h-6 w-6 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Démocratie Directe</CardTitle>
+            <p className="text-muted-foreground">
+              Participez aux votes avec vos jetons
+            </p>
+          </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
@@ -240,5 +250,6 @@ export const AuthPage = () => {
           </CardContent>
         </Card>
       </div>
+    </div>
     );
 };
