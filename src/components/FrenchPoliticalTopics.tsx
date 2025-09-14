@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Vote, Clock, Newspaper, TrendingUp, CheckCircle } from "lucide-react";
+import { Vote, Clock, Newspaper, TrendingUp, CheckCircle, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -283,11 +283,11 @@ export const FrenchPoliticalTopics = () => {
                       </div>
                       <div className="flex-1">
                         <h4 className="font-semibold text-foreground mb-2">📊 Données objectives extraites</h4>
-                        {topic.description.includes('DONNÉES OBJECTIVES:') ? (
-                          <div className="text-sm text-muted-foreground leading-relaxed">
-                            {topic.description.split('DONNÉES OBJECTIVES:')[1]?.split('•').map((data, index) => (
+                        {topic.description.includes('DONNÉES PRÉCISES:') ? (
+                          <div className="text-sm leading-relaxed">
+                            {topic.description.split('DONNÉES PRÉCISES:')[1]?.split('•').map((data, index) => (
                               data.trim() && (
-                                <div key={index} className="flex items-center gap-2 mb-1">
+                                <div key={index} className="flex items-center gap-2 mb-1 p-2 bg-background/60 rounded border-l-2 border-primary">
                                   <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                                   <span className="font-medium text-foreground">{data.trim()}</span>
                                 </div>
@@ -295,9 +295,26 @@ export const FrenchPoliticalTopics = () => {
                             ))}
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">
-                            Données chiffrées présentes dans l'article source permettant un vote éclairé.
-                          </p>
+                          <div className="text-sm text-muted-foreground bg-muted/50 p-3 rounded border border-destructive/30">
+                            <span className="text-destructive font-medium">⚠️ Données insuffisantes</span>
+                            <p className="mt-1">Ce sujet n'a pas assez de données quantifiées pour un vote éclairé et devrait être retiré.</p>
+                          </div>
+                        )}
+                        
+                        {/* Lien vers l'article source */}
+                        {topic.news_url && (
+                          <div className="mt-3 pt-3 border-t border-border/50">
+                            <a 
+                              href={topic.news_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                              Lire l'article complet sur {topic.source}
+                            </a>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -305,11 +322,13 @@ export const FrenchPoliticalTopics = () => {
 
                   <div className="mt-4 p-4 bg-background/50 rounded-lg">
                     <div className="mb-4">
-                      <h4 className="font-semibold text-foreground mb-2">📄 Résumé de l'article complet</h4>
+                      <h4 className="font-semibold text-foreground mb-2">📄 Contexte de l'article</h4>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        {topic.description.includes('RÉSUMÉ:') 
-                          ? topic.description.split('RÉSUMÉ:')[1]?.split('DONNÉES OBJECTIVES:')[0]?.trim() 
-                          : topic.description.split('DONNÉES OBJECTIVES:')[0]?.trim() || topic.description}
+                        {topic.description.includes('CONTEXTE:') 
+                          ? topic.description.split('CONTEXTE:')[1]?.split('FAITS CHIFFRÉS:')[0]?.split('DONNÉES PRÉCISES:')[0]?.trim() 
+                          : topic.description.includes('RÉSUMÉ:')
+                          ? topic.description.split('RÉSUMÉ:')[1]?.split('DONNÉES OBJECTIVES:')[0]?.split('DONNÉES PRÉCISES:')[0]?.trim()
+                          : topic.description.split('DONNÉES OBJECTIVES:')[0]?.split('DONNÉES PRÉCISES:')[0]?.trim() || topic.description}
                       </p>
                     </div>
                     
