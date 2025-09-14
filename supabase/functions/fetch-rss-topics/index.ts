@@ -102,6 +102,18 @@ serve(async (req) => {
 
     console.log(`Traité ${newTopics.length} nouveaux sujets avec données chiffrées`);
 
+    // Nettoyer d'abord les anciens sujets périmés
+    const { error: deleteError } = await supabaseClient
+      .from('voting_topics')
+      .delete()
+      .or('title.ilike.%budget 2024%,title.ilike.%budget 24%,title.ilike.%plf 2024%,description.ilike.%budget 2024%');
+
+    if (deleteError) {
+      console.error('Erreur lors de la suppression des anciens sujets:', deleteError);
+    } else {
+      console.log('Anciens sujets périmés supprimés');
+    }
+
     // Insert new topics into database
     if (newTopics.length > 0) {
       const { data, error } = await supabaseClient
