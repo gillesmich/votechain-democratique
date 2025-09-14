@@ -160,8 +160,11 @@ function parseRSSItems(rssText: string, source: any) {
       // Skip if title is too short or contains unwanted content
       if (title.length > 20 && !title.toLowerCase().includes('podcast') && !title.toLowerCase().includes('direct')) {
         
-        // Vérifier si le sujet propose un choix clair ET contient des données chiffrées
-        if (hasDebatableChoice(title, description) && hasNumericalData(title, description)) {
+        // Extraire les données objectives du sujet
+        const objectiveData = extractObjectiveData(title, description);
+        
+        // Vérifier si le sujet propose un choix clair ET contient des données chiffrées objectives
+        if (hasDebatableChoice(title, description) && objectiveData.length > 0) {
           
           // Categorize based on keywords
           let category = source.category;
@@ -182,15 +185,20 @@ function parseRSSItems(rssText: string, source: any) {
           // Reformuler le titre pour être plus clair sur le choix
           const reformulatedTitle = reformulateAsChoice(title, description);
 
+          // Ajouter les données objectives à la description
+          const enrichedDescription = `${description || `Article de ${source.name} sur l'actualité politique française.`}\n\nDONNÉES OBJECTIVES: ${objectiveData.join(' • ')}`;
+
           items.push({
             title: reformulatedTitle,
-            description: description || `Article de ${source.name} sur l'actualité politique française.`,
+            description: enrichedDescription,
             source: source.name,
             category: category,
             news_url: newsUrl,
             is_active: true,
             total_votes: 0
           });
+        } else {
+          console.log(`Sujet rejeté (manque de données objectives): ${title}`);
         }
       }
     }
@@ -297,7 +305,75 @@ function reformulateAsChoice(title: string, description: string): string {
   
   if (titleLower.includes('nucléaire') || titleLower.includes('énergie')) {
     return title + ' : quelle politique énergétique privilégier ?';
+}
+
+// Fonction pour extraire les données objectives et chiffrées précises
+function extractObjectiveData(title: string, description: string): string[] {
+  const text = title + ' ' + description;
+  const objectiveData: string[] = [];
+  
+  // Extraire les pourcentages
+  const percentageMatches = text.match(/\d+[,.]?\d*\s*%/g);
+  if (percentageMatches) {
+    percentageMatches.forEach(match => {
+      objectiveData.push(`Pourcentage : ${match.trim()}`);
+    });
   }
+  
+  // Extraire les montants en euros
+  const euroMatches = text.match(/\d+[,.]?\d*\s*(millions?|milliards?)\s*(d'euros?|€|euros?)/gi);
+  if (euroMatches) {
+    euroMatches.forEach(match => {
+      objectiveData.push(`Montant : ${match.trim()}`);
+    });
+  }
+  
+  // Extraire les dates et années
+  const yearMatches = text.match(/\d{4}|\d{1,2}\/\d{1,2}\/\d{4}/g);
+  if (yearMatches) {
+    const uniqueYears = [...new Set(yearMatches)];
+    uniqueYears.forEach(year => {
+      objectiveData.push(`Date/Année : ${year}`);
+    });
+  }
+  
+  // Extraire les durées (années, mois, etc.)
+  const durationMatches = text.match(/\d+[,.]?\d*\s*(ans?|années?|mois|semaines?|jours?)/gi);
+  if (durationMatches) {
+    durationMatches.forEach(match => {
+      objectiveData.push(`Durée : ${match.trim()}`);
+    });
+  }
+  
+  // Extraire les nombres avec unités spécifiques
+  const specificNumbers = text.match(/\d+[,.]?\d*\s*(emplois?|postes?|personnes?|habitants?|élèves?|étudiants?|retraités?)/gi);
+  if (specificNumbers) {
+    specificNumbers.forEach(match => {
+      objectiveData.push(`Nombre : ${match.trim()}`);
+    });
+  }
+  
+  // Extraire les augmentations/baisses chiffrées
+  const changeMatches = text.match(/(augmentation|baisse|hausse|diminution|croissance|recul)\s*(de\s*)?\d+[,.]?\d*\s*%?/gi);
+  if (changeMatches) {
+    changeMatches.forEach(match => {
+      objectiveData.push(`Évolution : ${match.trim()}`);
+    });
+  }
+  
+  // Extraire les âges (pour retraites, etc.)
+  const ageMatches = text.match(/\d+\s*ans?\s*(de\s*)?(cotisation|retraite|service)/gi);
+  if (ageMatches) {
+    ageMatches.forEach(match => {
+      objectiveData.push(`Âge/Durée : ${match.trim()}`);
+    });
+  }
+  
+  // Nettoyer et dédupliquer
+  const cleanedData = [...new Set(objectiveData)].slice(0, 4); // Max 4 données
+  
+  return cleanedData;
+}
   
   if (titleLower.includes('éducation') || titleLower.includes('école')) {
     return title + ' : approuvez-vous ces changements éducatifs ?';
