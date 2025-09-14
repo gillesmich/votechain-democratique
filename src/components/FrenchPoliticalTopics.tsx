@@ -18,6 +18,30 @@ interface Topic {
   created_at: string;
 }
 
+// Helper function for category colors
+const getCategoryColor = (category: string) => {
+  const colors: { [key: string]: string } = {
+    "Social": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
+    "Environnement": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
+    "Société": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
+    "Économie": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+    "Éducation": "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200"
+  };
+  return colors[category] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+};
+
+// Helper function for time ago
+const getTimeAgo = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+  
+  if (diffInHours < 1) return "Il y a moins d'une heure";
+  if (diffInHours < 24) return `Il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `Il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
+};
+
 export const FrenchPoliticalTopics = () => {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
@@ -110,28 +134,6 @@ export const FrenchPoliticalTopics = () => {
     } finally {
       setVotingLoading(null);
     }
-  };
-
-  const getCategoryColor = (category: string) => {
-    const colors: { [key: string]: string } = {
-      "Social": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200",
-      "Environnement": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-      "Société": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200",
-      "Économie": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
-      "Éducation": "bg-pink-100 text-pink-800 dark:bg-pink-900 dark:text-pink-200"
-    };
-    return colors[category] || "bg-gray-100 text-gray-800";
-  };
-
-  const getTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
-    if (diffInHours < 1) return "Il y a moins d'une heure";
-    if (diffInHours < 24) return `Il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `Il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
   };
 
   if (loading) {
