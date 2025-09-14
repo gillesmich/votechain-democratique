@@ -1,66 +1,114 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Vote, Clock, Newspaper, TrendingUp } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-// Simulation de sujets politiques français
-const mockTopics = [
-  {
-    id: 1,
-    title: "Réforme des retraites : nouvelles propositions du gouvernement",
-    source: "Le Figaro",
-    timestamp: "Il y a 2 heures",
-    category: "Social",
-    votes: 2847,
-    trending: true
-  },
-  {
-    id: 2,
-    title: "Transition énergétique : le débat sur le nucléaire relancé",
-    source: "Le Monde",
-    timestamp: "Il y a 4 heures",
-    category: "Environnement",
-    votes: 1923,
-    trending: false
-  },
-  {
-    id: 3,
-    title: "Immigration : nouvelles mesures proposées à l'Assemblée",
-    source: "Libération",
-    timestamp: "Il y a 6 heures",
-    category: "Société",
-    votes: 3156,
-    trending: true
-  },
-  {
-    id: 4,
-    title: "Budget 2024 : les priorités économiques en débat",
-    source: "Les Échos",
-    timestamp: "Il y a 8 heures",
-    category: "Économie",
-    votes: 1687,
-    trending: false
-  },
-  {
-    id: 5,
-    title: "Éducation nationale : réforme du baccalauréat en discussion",
-    source: "Le Parisien",
-    timestamp: "Il y a 12 heures",
-    category: "Éducation",
-    votes: 2341,
-    trending: false
-  }
-];
+interface Topic {
+  id: string;
+  title: string;
+  description: string;
+  source: string;
+  category: string;
+  news_url: string;
+  total_votes: number;
+  created_at: string;
+}
 
 export const FrenchPoliticalTopics = () => {
-  const [selectedTopic, setSelectedTopic] = useState<number | null>(null);
-  const [userVotes, setUserVotes] = useState<Set<number>>(new Set());
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [userVotes, setUserVotes] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(true);
+  const [votingLoading, setVotingLoading] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const handleVote = (topicId: number) => {
-    if (!userVotes.has(topicId)) {
+  useEffect(() => {
+    fetchTopics();
+    if (user) {
+      fetchUserVotes();
+    }
+  }, [user]);
+
+  const fetchTopics = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('voting_topics')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setTopics(data || []);
+    } catch (error) {
+      console.error('Error fetching topics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchUserVotes = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('user_votes')
+        .select('topic_id')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      setUserVotes(new Set(data?.map(vote => vote.topic_id) || []));
+    } catch (error) {
+      console.error('Error fetching user votes:', error);
+    }
+  };
+
+  const handleVote = async (topicId: string, voteChoice: 'pour' | 'contre' | 'abstention') => {
+    if (!user) {
+      toast({
+        title: "Connexion requise",
+        description: "Vous devez être connecté pour voter",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (userVotes.has(topicId)) {
+      toast({
+        title: "Vote déjà effectué",
+        description: "Vous avez déjà voté sur ce sujet",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setVotingLoading(topicId);
+    try {
+      const response = await supabase.functions.invoke('cast-vote', {
+        body: { topicId, voteChoice }
+      });
+
+      if (response.error) throw response.error;
+
       setUserVotes(new Set(userVotes.add(topicId)));
-      // Ici on ajouterait la logique blockchain pour enregistrer le vote
+      await fetchTopics(); // Refresh to get updated vote counts
+
+      toast({
+        title: "Vote enregistré",
+        description: `Votre vote "${voteChoice}" a été enregistré sur la blockchain`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur de vote",
+        description: error.message || "Impossible d'enregistrer votre vote",
+        variant: "destructive"
+      });
+    } finally {
+      setVotingLoading(null);
     }
   };
 
@@ -74,6 +122,28 @@ export const FrenchPoliticalTopics = () => {
     };
     return colors[category] || "bg-gray-100 text-gray-800";
   };
+
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
+    
+    if (diffInHours < 1) return "Il y a moins d'une heure";
+    if (diffInHours < 24) return `Il y a ${diffInHours} heure${diffInHours > 1 ? 's' : ''}`;
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `Il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
+  };
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Chargement des sujets politiques...</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-16 bg-background">
@@ -95,7 +165,7 @@ export const FrenchPoliticalTopics = () => {
         </div>
 
         <div className="grid gap-6 max-w-4xl mx-auto">
-          {mockTopics.map((topic) => (
+          {topics.map((topic) => (
             <Card 
               key={topic.id} 
               className={`border transition-all duration-300 cursor-pointer hover:shadow-lg ${
@@ -112,7 +182,7 @@ export const FrenchPoliticalTopics = () => {
                       <Badge className={getCategoryColor(topic.category)}>
                         {topic.category}
                       </Badge>
-                      {topic.trending && (
+                      {topic.total_votes > 100 && (
                         <Badge variant="outline" className="border-accent text-accent">
                           <TrendingUp className="h-3 w-3 mr-1" />
                           Tendance
@@ -126,19 +196,65 @@ export const FrenchPoliticalTopics = () => {
                   <div className="text-right">
                     <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
                       <Vote className="h-4 w-4" />
-                      {topic.votes} votes
+                      {topic.total_votes} votes
                     </div>
-                    <Button
-                      size="sm"
-                      variant={userVotes.has(topic.id) ? "default" : "outline"}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleVote(topic.id);
-                      }}
-                      disabled={userVotes.has(topic.id)}
-                    >
-                      {userVotes.has(topic.id) ? "Voté" : "Voter"}
-                    </Button>
+                    <div className="space-x-2">
+                      {user ? (
+                        userVotes.has(topic.id) ? (
+                          <Badge variant="default">Voté</Badge>
+                        ) : (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleVote(topic.id, 'pour');
+                              }}
+                              disabled={votingLoading === topic.id}
+                              className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                            >
+                              Pour
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleVote(topic.id, 'contre');
+                              }}
+                              disabled={votingLoading === topic.id}
+                              className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                            >
+                              Contre
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleVote(topic.id, 'abstention');
+                              }}
+                              disabled={votingLoading === topic.id}
+                              className="bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                            >
+                              Abstention
+                            </Button>
+                          </>
+                        )
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            window.location.href = '/auth';
+                          }}
+                        >
+                          Se connecter pour voter
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -152,15 +268,28 @@ export const FrenchPoliticalTopics = () => {
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4" />
-                      {topic.timestamp}
+                      {getTimeAgo(topic.created_at)}
                     </div>
                   </div>
                   <div className="mt-4 p-4 bg-background/50 rounded-lg">
                     <p className="text-sm">
+                      <strong>Description :</strong> {topic.description}
+                    </p>
+                    <p className="text-sm mt-2">
                       <strong>Contexte :</strong> Ce sujet fait partie des débats nationaux actuels. 
                       Votre participation à ce vote contribue à mesurer l'opinion publique sur cette question.
-                      Les résultats seront enregistrés de manière sécurisée via la blockchain.
+                      Les résultats sont enregistrés de manière sécurisée via la blockchain.
                     </p>
+                    {topic.news_url && (
+                      <a 
+                        href={topic.news_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline text-sm mt-2 inline-block"
+                      >
+                        Lire l'article complet →
+                      </a>
+                    )}
                   </div>
                 </CardContent>
               )}
